@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulačka ceny nemovitosti — MSK</title>
+<style>
+  :root{
+    --bg:#f7f8f8;
+    --panel:#ffffff;
+    --ink:#1b2430;
+    --muted:#66707c;
+    --line:#e3e7ea;
+    --accent:#2c5f6f;
+    --accent-soft:#e7eff1;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    padding:28px 16px;
+  }
+  .card{
+    width:100%;
+    max-width:420px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:26px 24px 22px;
+  }
+  h1{
+    font-size:17px;
+    font-weight:700;
+    letter-spacing:.2px;
+    margin:0 0 2px;
+  }
+  .sub{
+    font-size:12.5px;
+    color:var(--muted);
+    margin:0 0 20px;
+    line-height:1.4;
+  }
+  label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    margin:14px 0 6px;
+  }
+  select, input{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:14.5px;
+    background:#fbfcfc;
+    color:var(--ink);
+  }
+  select:focus, input:focus{
+    outline:none;
+    border-color:var(--accent);
+  }
+  .seg{
+    display:flex;
+    gap:8px;
+  }
+  .seg button{
+    flex:1;
+    margin-top:0;
+    padding:9px 0;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:#fbfcfc;
+    color:var(--muted);
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .seg button.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+  .row{
+    display:flex;
+    gap:10px;
+  }
+  .row > div{flex:1;}
+  .calcbtn{
+    width:100%;
+    margin-top:20px;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:var(--accent);
+    color:#fff;
+    font-size:14.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .calcbtn:hover{background:#244d5a;}
+  .result{
+    margin-top:20px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    display:none;
+  }
+  .result.show{display:block;}
+  .line{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding:7px 0;
+  }
+  .line .label{font-size:13px;color:var(--muted);}
+  .line .value{font-size:15px;font-weight:700;}
+  .highlight{
+    background:var(--accent-soft);
+    border-radius:8px;
+    padding:12px 14px;
+    margin-top:8px;
+  }
+  .highlight .label{font-size:12.5px;color:var(--accent);font-weight:600;}
+  .highlight .value{font-size:19px;color:var(--accent);}
+  .note{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:14px;
+    line-height:1.5;
+  }
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Kalkulačka ceny nemovitosti</h1>
+  <p class="sub">Moravskoslezský kraj — odhad ceny a potřebné vlastní úspory na hypotéku</p>
+
+  <label>Typ nemovitosti</label>
+  <div class="seg" id="nemovitostSeg">
+    <button type="button" data-val="byt" class="active">Byt</button>
+    <button type="button" data-val="dum">Rodinný dům</button>
+  </div>
+
+  <label for="okres">Okres</label>
+  <select id="okres"></select>
+
+  <div id="typBytuWrap">
+    <label for="typ">Typ bytu</label>
+    <select id="typ"></select>
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="m2">Plocha (m²)</label>
+      <input type="number" id="m2" step="1">
+    </div>
+    <div>
+      <label for="cenaM2">Cena za m² (Kč)</label>
+      <input type="number" id="cenaM2" step="500">
+    </div>
+  </div>
+
+  <label for="vlastni">Vlastní úspory</label>
+  <div class="seg" id="vlastniSeg">
+    <button type="button" data-val="10">10 %</button>
+    <button type="button" data-val="20" class="active">20 %</button>
+    <button type="button" data-val="30">30 %</button>
+  </div>
+
+  <button class="calcbtn" onclick="pocitej()">Spočítat</button>
+
+  <div class="result" id="result">
+    <div class="line"><span class="label">Odhadovaná cena nemovitosti</span><span class="value" id="cena">–</span></div>
+    <div class="highlight">
+      <div class="line"><span class="label">Potřebná naspořená částka</span><span class="value" id="uspora">–</span></div>
+    </div>
+    <div class="line"><span class="label">Výše hypotéky</span><span class="value" id="hypoteka">–</span></div>
+  </div>
+
+  <p class="note">Ceny za m² jsou orientační průměry pro okres, skutečná cena se liší podle konkrétní lokality a stavu nemovitosti. Hodnoty si klidně uprav podle vlastního průzkumu (např. sreality.cz).</p>
+</div>
+
+<script>
+  // Ceny za m² podle okresu — byty a rodinné domy (Kč)
+  const ceny = {
+    byt: {
+      "Bruntál": 36921,
+      "Frýdek-Místek": 56857,
+      "Karviná": 40090,
+      "Nový Jičín": 46662,
+      "Opava": 54502,
+      "Ostrava-město": 60498
+    },
+    dum: {
+      "Bruntál": 38065,
+      "Frýdek-Místek": 48650,
+      "Karviná": 45448,
+      "Nový Jičín": 43210,
+      "Opava": 43120,
+      "Ostrava-město": 59204
+    }
+  };
+
+  // Typický počet m² podle typu bytu
+  const typyBytu = {
+    "1+kk": 32,
+    "1+1": 39,
+    "2+kk": 52,
+    "2+1": 60,
+    "3+kk": 70,
+    "3+1": 80,
+    "4+kk": 92,
+    "4+1": 100
+  };
+
+  let nemovitost = "byt";
+  let vlastniPct = 20;
+
+  const okresSelect = document.getElementById('okres');
+  const typSelect = document.getElementById('typ');
+  const typBytuWrap = document.getElementById('typBytuWrap');
+  const m2Input = document.getElementById('m2');
+  const cenaM2Input = document.getElementById('cenaM2');
+
+  function naplnOkresy(){
+    okresSelect.innerHTML = '';
+    for (const o in ceny[nemovitost]){
+      const opt = document.createElement('option');
+      opt.value = o; opt.textContent = o;
+      okresSelect.appendChild(opt);
+    }
+  }
+
+  for (const t in typyBytu){
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t + ' (' + typyBytu[t] + ' m²)';
+    typSelect.appendChild(opt);
+  }
+
+  function synchronizuj(){
+    cenaM2Input.value = ceny[nemovitost][okresSelect.value];
+    if (nemovitost === "byt"){
+      typBytuWrap.classList.remove('hidden');
+      m2Input.value = typyBytu[typSelect.value];
+    } else {
+      typBytuWrap.classList.add('hidden');
+      m2Input.value = 120;
+    }
+  }
+
+  document.getElementById('nemovitostSeg').addEventListener('click', function(e){
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    this.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    nemovitost = btn.dataset.val;
+    naplnOkresy();
+    synchronizuj();
+  });
+
+  document.getElementById('vlastniSeg').addEventListener('click', function(e){
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    this.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    vlastniPct = parseFloat(btn.dataset.val);
+  });
+
+  okresSelect.addEventListener('change', synchronizuj);
+  typSelect.addEventListener('change', synchronizuj);
+
+  naplnOkresy();
+  synchronizuj();
+
+  function formatKc(cislo){
+    return Math.round(cislo).toLocaleString('cs-CZ') + ' Kč';
+  }
+
+  function pocitej(){
+    const m2 = parseFloat(m2Input.value) || 0;
+    const cenaM2 = parseFloat(cenaM2Input.value) || 0;
+
+    const cenaNemovitosti = m2 * cenaM2;
+    const uspora = cenaNemovitosti * (vlastniPct / 100);
+    const hypoteka = cenaNemovitosti - uspora;
+
+    document.getElementById('cena').textContent = formatKc(cenaNemovitosti);
+    document.getElementById('uspora').textContent = formatKc(uspora);
+    document.getElementById('hypoteka').textContent = formatKc(hypoteka);
+    document.getElementById('result').classList.add('show');
+  }
+</script>
+
+</body>
+</html>
