@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -6,14 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kalkulačka ceny nemovitosti — MSK</title>
 <style>
+  /* ====== BAREVNÉ A ZÁKLADNÍ PROMĚNNÉ ======
+     Tady se nastavuje hlavní barva (--accent) a další barvy použité v celé kalkulačce.
+     Když budeš chtít změnit barvu tlačítek, stačí upravit --accent. */
   :root{
-    --bg:#f7f8f8;
-    --panel:#ffffff;
-    --ink:#1b2430;
-    --muted:#66707c;
-    --line:#e3e7ea;
-    --accent:#004289;
-    --accent-soft:#e7eff1;
+    --bg:#f7f8f8;         /* barva pozadí celé stránky */
+    --panel:#ffffff;      /* barva bílé karty s kalkulačkou */
+    --ink:#1b2430;        /* barva běžného textu */
+    --muted:#66707c;      /* barva "tlumeného" textu (popisky, poznámky) */
+    --line:#e3e7ea;       /* barva jemných okrajů/čar */
+    --accent:#004289;     /* HLAVNÍ barva - tlačítka, zvýraznění */
+    --accent-soft:#e7eff1;/* světlá varianta hlavní barvy (pozadí zvýrazněného výsledku) */
   }
   *{box-sizing:border-box;}
   body{
@@ -25,6 +27,7 @@
     justify-content:center;
     padding:28px 16px;
   }
+  /* Bílá "karta", ve které je celá kalkulačka */
   .card{
     width:100%;
     max-width:420px;
@@ -45,6 +48,7 @@
     margin:0 0 20px;
     line-height:1.4;
   }
+  /* Popisky nad políčky (např. "Okres", "Plocha (m²)") */
   label{
     display:block;
     font-size:12px;
@@ -54,6 +58,7 @@
     letter-spacing:.4px;
     margin:14px 0 6px;
   }
+  /* Výběrová pole (select) a textová/číselná pole (input) */
   select, input{
     width:100%;
     padding:10px 12px;
@@ -67,6 +72,7 @@
     outline:none;
     border-color:var(--accent);
   }
+  /* "Seg" = skupina přepínacích tlačítek vedle sebe (např. Byt / Rodinný dům) */
   .seg{
     display:flex;
     gap:8px;
@@ -83,16 +89,19 @@
     font-weight:600;
     cursor:pointer;
   }
+  /* Aktivní (vybrané) tlačítko ve skupině - zvýrazněné hlavní barvou */
   .seg button.active{
     background:var(--accent);
     border-color:var(--accent);
     color:#fff;
   }
+  /* Dvě políčka vedle sebe v jedné řadě (např. Plocha + Cena za m²) */
   .row{
     display:flex;
     gap:10px;
   }
   .row > div{flex:1;}
+  /* Hlavní tlačítko "Spočítat" */
   .calcbtn{
     width:100%;
     margin-top:20px;
@@ -106,6 +115,7 @@
     cursor:pointer;
   }
   .calcbtn:hover{background:#002d5c;}
+  /* Blok s výsledkem - skrytý, dokud se neklikne na "Spočítat" */
   .result{
     margin-top:20px;
     padding-top:16px;
@@ -113,6 +123,7 @@
     display:none;
   }
   .result.show{display:block;}
+  /* Jeden řádek výsledku: popisek vlevo, hodnota vpravo */
   .line{
     display:flex;
     justify-content:space-between;
@@ -121,6 +132,7 @@
   }
   .line .label{font-size:13px;color:var(--muted);}
   .line .value{font-size:15px;font-weight:700;}
+  /* Zvýrazněný "highlight" box (naspořená částka) */
   .highlight{
     background:var(--accent-soft);
     border-radius:8px;
@@ -129,12 +141,14 @@
   }
   .highlight .label{font-size:12.5px;color:var(--accent);font-weight:600;}
   .highlight .value{font-size:19px;color:var(--accent);}
+  /* Drobná poznámka úplně dole */
   .note{
     font-size:11px;
     color:var(--muted);
     margin-top:14px;
     line-height:1.5;
   }
+  /* Pomocná třída - když ji prvek má, je úplně skrytý (display:none) */
   .hidden{display:none;}
 </style>
 </head>
@@ -144,20 +158,24 @@
   <h1>Kalkulačka ceny nemovitosti</h1>
   <p class="sub">Moravskoslezský kraj — odhad ceny a potřebné vlastní úspory na hypotéku</p>
 
+  <!-- Přepínač: Byt / Rodinný dům -->
   <label>Typ nemovitosti</label>
   <div class="seg" id="nemovitostSeg">
     <button type="button" data-val="byt" class="active">Byt</button>
     <button type="button" data-val="dum">Rodinný dům</button>
   </div>
 
+  <!-- Výběr okresu - podle něj se dosadí orientační cena za m² -->
   <label for="okres">Okres</label>
   <select id="okres"></select>
 
+  <!-- Tenhle blok (výběr typu bytu) se zobrazuje jen když je vybraný "Byt" -->
   <div id="typBytuWrap">
     <label for="typ">Typ bytu</label>
     <select id="typ"></select>
   </div>
 
+  <!-- Plocha a cena za m² - dosadí se automaticky, ale dají se ručně přepsat -->
   <div class="row">
     <div>
       <label for="m2">Plocha (m²)</label>
@@ -165,23 +183,23 @@
     </div>
     <div>
       <label for="cenaM2">Cena za m² (Kč)</label>
-      <input type="number" id="cenaM2" step="500">
+      <!-- type="text" místo "number", aby šlo zobrazit mezery mezi tisíci (např. 36 921) -->
+      <input type="text" inputmode="numeric" id="cenaM2">
     </div>
   </div>
 
+  <!-- Přepínač: platba z vlastních zdrojů, nebo přes hypotéku -->
   <label>Způsob financování</label>
   <div class="seg" id="financovaniSeg">
     <button type="button" data-val="vlastni">Vlastní zdroje</button>
     <button type="button" data-val="hypoteka" class="active">Hypotéka</button>
   </div>
 
+  <!-- Tenhle celý blok (naspořená částka + úrok + doba splácení) se zobrazuje
+       jen při volbě "Hypotéka" - u vlastních zdrojů to není potřeba -->
   <div id="vlastniWrap">
-    <label for="vlastni">Vlastní úspory</label>
-    <div class="seg" id="vlastniSeg">
-      <button type="button" data-val="10">10 %</button>
-      <button type="button" data-val="20" class="active">20 %</button>
-      <button type="button" data-val="30">30 %</button>
-    </div>
+    <label for="nasporeno">Kolik máte naspořeno (Kč)</label>
+    <input type="text" inputmode="numeric" id="nasporeno" placeholder="např. 250 000">
 
     <div class="row">
       <div>
@@ -197,6 +215,7 @@
 
   <button class="calcbtn" onclick="pocitej()">Spočítat</button>
 
+  <!-- Výsledek se objeví až po kliknutí na tlačítko "Spočítat" -->
   <div class="result" id="result">
     <div class="line"><span class="label">Odhadovaná cena nemovitosti</span><span class="value" id="cena">–</span></div>
     <div class="highlight">
@@ -210,7 +229,12 @@
 </div>
 
 <script>
-  // Ceny za m² podle okresu — byty a rodinné domy (Kč)
+  /* ====================================================================
+     DATA - ceny za m² a typické velikosti bytů.
+     Tyhle hodnoty klidně uprav, pokud budeš chtít změnit výchozí odhady.
+     ==================================================================== */
+
+  // Ceny za m² podle okresu (Kč) - zvlášť pro byty a zvlášť pro rodinné domy
   const ceny = {
     byt: {
       "Bruntál": 36921,
@@ -230,7 +254,7 @@
     }
   };
 
-  // Typický počet m² podle typu bytu
+  // Typický počet m² podle typu bytu (použije se pro automatické vyplnění plochy)
   const typyBytu = {
     "1+kk": 32,
     "1+1": 39,
@@ -242,19 +266,53 @@
     "4+1": 100
   };
 
-  let nemovitost = "byt";
-  let financovani = "hypoteka";
-  let vlastniPct = 20;
+  /* ====================================================================
+     STAV APLIKACE - proměnné, které si kalkulačka pamatuje průběžně
+     (podle toho, co si uživatel zrovna vybral)
+     ==================================================================== */
+  let nemovitost = "byt";        // "byt" nebo "dum"
+  let financovani = "hypoteka";  // "vlastni" nebo "hypoteka"
 
+  /* ====================================================================
+     ODKAZY NA HTML PRVKY - abychom s nimi mohli dál pracovat v JavaScriptu
+     ==================================================================== */
   const okresSelect = document.getElementById('okres');
   const typSelect = document.getElementById('typ');
   const typBytuWrap = document.getElementById('typBytuWrap');
   const vlastniWrap = document.getElementById('vlastniWrap');
   const m2Input = document.getElementById('m2');
   const cenaM2Input = document.getElementById('cenaM2');
+  const nasporenoInput = document.getElementById('nasporeno');
   const urokInput = document.getElementById('urok');
   const dobaInput = document.getElementById('doba');
 
+  /* ====================================================================
+     POMOCNÉ FUNKCE PRO FORMÁTOVÁNÍ ČÍSEL S MEZEROU (např. 36921 -> "36 921")
+     ==================================================================== */
+
+  // Vezme text z políčka (může obsahovat mezery) a vrátí z něj čisté číslo
+  function parseNumber(text){
+    if (!text) return 0;
+    const cisty = String(text).replace(/\s/g, '').replace(',', '.');
+    return parseFloat(cisty) || 0;
+  }
+
+  // Vezme číslo a vrátí ho jako text s mezerami mezi tisíci (pro zobrazení v poli)
+  function formatNumberInput(cislo){
+    cislo = Math.round(cislo);
+    return cislo.toLocaleString('cs-CZ').replace(/\u00A0/g, ' ');
+  }
+
+  // Stejné formátování, ale rovnou i s "Kč" na konci (pro výsledky)
+  function formatKc(cislo){
+    return formatNumberInput(cislo) + ' Kč';
+  }
+
+  /* ====================================================================
+     NAPLNĚNÍ VÝBĚROVÝCH POLÍ (select) MOŽNOSTMI
+     ==================================================================== */
+
+  // Naplní select "Okres" podle toho, jestli je vybraný byt nebo dům
   function naplnOkresy(){
     okresSelect.innerHTML = '';
     for (const o in ceny[nemovitost]){
@@ -264,6 +322,7 @@
     }
   }
 
+  // Naplní select "Typ bytu" - všechny typy z typyBytu + možnost "Vlastní"
   function naplnTypyBytu(){
     typSelect.innerHTML = '';
     for (const t in typyBytu){
@@ -271,6 +330,7 @@
       opt.value = t; opt.textContent = t + ' (' + typyBytu[t] + ' m²)';
       typSelect.appendChild(opt);
     }
+    // "Vlastní" = uživatel si sám zadá plochu i cenu, nic se mu nepředvyplní
     const vlastniOpt = document.createElement('option');
     vlastniOpt.value = "Vlastní";
     vlastniOpt.textContent = "Vlastní";
@@ -278,12 +338,19 @@
   }
   naplnTypyBytu();
 
+  /* ====================================================================
+     LOGIKA PRO AUTOMATICKÉ VYPLŇOVÁNÍ POLÍ
+     ==================================================================== */
+
+  // Dosadí cenu za m² podle aktuálně vybraného okresu (a typu nemovitosti)
   function updateCenaM2FromOkres(){
-    cenaM2Input.value = ceny[nemovitost][okresSelect.value];
+    cenaM2Input.value = formatNumberInput(ceny[nemovitost][okresSelect.value]);
   }
 
+  // Když se změní typ bytu (1+kk, 2+1, ... nebo "Vlastní")
   function updateTypBytu(){
     if (typSelect.value === "Vlastní"){
+      // U "Vlastní" necháme pole prázdná, ať si je uživatel vyplní sám
       m2Input.value = '';
       cenaM2Input.value = '';
     } else {
@@ -292,6 +359,7 @@
     }
   }
 
+  // Když se přepne Byt / Rodinný dům - znovu naplní okresy a nastaví výchozí hodnoty
   function initNemovitost(){
     naplnOkresy();
     if (nemovitost === "byt"){
@@ -299,12 +367,18 @@
       typSelect.selectedIndex = 0;
       updateTypBytu();
     } else {
+      // U rodinného domu není typ bytu, plocha se zadává rovnou
       typBytuWrap.classList.add('hidden');
       m2Input.value = 120;
       updateCenaM2FromOkres();
     }
   }
 
+  /* ====================================================================
+     REAKCE NA KLIKÁNÍ / PSANÍ UŽIVATELE (event listenery)
+     ==================================================================== */
+
+  // Kliknutí na Byt / Rodinný dům
   document.getElementById('nemovitostSeg').addEventListener('click', function(e){
     const btn = e.target.closest('button');
     if (!btn) return;
@@ -314,6 +388,7 @@
     initNemovitost();
   });
 
+  // Kliknutí na "Vlastní zdroje" / "Hypotéka"
   document.getElementById('financovaniSeg').addEventListener('click', function(e){
     const btn = e.target.closest('button');
     if (!btn) return;
@@ -321,61 +396,78 @@
     btn.classList.add('active');
     financovani = btn.dataset.val;
     if (financovani === "hypoteka"){
-      vlastniWrap.classList.remove('hidden');
+      vlastniWrap.classList.remove('hidden'); // ukázat naspořeno / úrok / doba
     } else {
-      vlastniWrap.classList.add('hidden');
+      vlastniWrap.classList.add('hidden'); // u vlastních zdrojů to není potřeba
     }
   });
 
-  document.getElementById('vlastniSeg').addEventListener('click', function(e){
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    this.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    vlastniPct = parseFloat(btn.dataset.val);
-  });
-
+  // Když se změní okres - přepočítá se cena za m² (pokud typ bytu není "Vlastní")
   okresSelect.addEventListener('change', function(){
     if (nemovitost === "dum" || typSelect.value !== "Vlastní"){
       updateCenaM2FromOkres();
     }
   });
 
+  // Změna typu bytu
   typSelect.addEventListener('change', updateTypBytu);
 
+  // Když uživatel opustí pole "Cena za m²" (klikne jinam), přeformátuje se s mezerami
+  cenaM2Input.addEventListener('blur', function(){
+    this.value = formatNumberInput(parseNumber(this.value));
+  });
+
+  // Stejně tak pole "Kolik máte naspořeno"
+  nasporenoInput.addEventListener('blur', function(){
+    if (this.value === '') return;
+    this.value = formatNumberInput(parseNumber(this.value));
+  });
+
+  // Spustí se hned při načtení stránky, aby byly hodnoty vyplněné od začátku
   initNemovitost();
 
-  function formatKc(cislo){
-    return Math.round(cislo).toLocaleString('cs-CZ') + ' Kč';
-  }
-
+  /* ====================================================================
+     HLAVNÍ VÝPOČET - spustí se po kliknutí na tlačítko "Spočítat"
+     ==================================================================== */
   function pocitej(){
+    // Načteme plochu a cenu za m² (z textu odstraníme mezery, aby šlo počítat)
     const m2 = parseFloat(m2Input.value) || 0;
-    const cenaM2 = parseFloat(cenaM2Input.value) || 0;
+    const cenaM2 = parseNumber(cenaM2Input.value);
     const cenaNemovitosti = m2 * cenaM2;
 
     document.getElementById('cena').textContent = formatKc(cenaNemovitosti);
 
     if (financovani === "hypoteka"){
-      const uspora = cenaNemovitosti * (vlastniPct / 100);
-      const hypoteka = cenaNemovitosti - uspora;
-      document.getElementById('uspora').textContent = formatKc(uspora);
+      // Kolik má uživatel naspořeno (zadal sám ručně)
+      const nasporeno = parseNumber(nasporenoInput.value);
+
+      // Výše hypotéky = cena nemovitosti minus to, co má naspořeno (nikdy ne záporně)
+      let hypoteka = cenaNemovitosti - nasporeno;
+      if (hypoteka < 0) hypoteka = 0;
+
+      // Zobrazíme, kolik má naspořeno, a kolik bude hypotéka
+      document.getElementById('uspora-label').textContent = 'Vaše naspořené prostředky';
+      document.getElementById('uspora').textContent = formatKc(nasporeno);
       document.getElementById('hypoteka').textContent = formatKc(hypoteka);
       document.getElementById('hypotekaLine').classList.remove('hidden');
 
-      const urok = parseFloat(urokInput.value) || 0;
-      const roky = parseFloat(dobaInput.value) || 0;
-      const r = (urok / 100) / 12;
-      const n = roky * 12;
+      // Výpočet měsíční splátky (tzv. anuitní vzorec, stejný jako u bank)
+      const urok = parseFloat(urokInput.value) || 0;   // úrok v % ročně
+      const roky = parseFloat(dobaInput.value) || 0;   // doba splácení v letech
+      const r = (urok / 100) / 12;  // měsíční úroková sazba
+      const n = roky * 12;          // počet měsíčních splátek
       let splatka = 0;
       if (n > 0){
         splatka = (r > 0)
           ? hypoteka * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1)
-          : hypoteka / n;
+          : hypoteka / n; // kdyby byl úrok 0 %, splátka je jen jistina / počet měsíců
       }
       document.getElementById('splatka').textContent = formatKc(splatka);
       document.getElementById('splatkaLine').classList.remove('hidden');
+
     } else {
+      // Platba z vlastních zdrojů - celá cena nemovitosti je potřebná naspořená částka
+      document.getElementById('uspora-label').textContent = 'Potřebná naspořená částka';
       document.getElementById('uspora').textContent = formatKc(cenaNemovitosti);
       document.getElementById('hypotekaLine').classList.add('hidden');
       document.getElementById('splatkaLine').classList.add('hidden');
